@@ -19,7 +19,7 @@ sleep 20
 
 if pkexec ~/.config/conky/turbostat.sh; then
     sleep 5
-    conky -c "$CONKY_CONFIG"
-    conky -c "$CONKY_CONFIG" -x -3410 -y 50
+    LANG=C conky -c "$CONKY_CONFIG"
+    LANG=C conky -c "$CONKY_CONFIG" -x -3410 -y 50
 fi
 
