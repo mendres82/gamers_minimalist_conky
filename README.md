@@ -1,7 +1,7 @@
-# Gamer's Minimalist Conky 1.13
+# Gamer's Minimalist Conky 1.14
 
 **Author:** mendres (based on the script of archit3x - archit3x@archlinux.us)  
-**Release Date:** 06 August 2024  
+**Release Date:** 28 August 2024  
 **Tested on:** openSUSE Tumbleweed - GNOME Desktop  
 
 Feel free to modify this script! 😊
@@ -60,5 +60,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-Enjoy your minimalist Conky setup! 🎮
+Enjoy your Gamer's Minimalist Conky setup! 🎮
 
