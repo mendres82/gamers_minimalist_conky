@@ -3,8 +3,8 @@
 CONKY_CONFIG="$HOME/.config/conky/conky.conf"
 
 fetch_version() {
-    local url="https://factory-dashboard.opensuse.org"
-    curl -s "$url" | grep -E 'download.opensuse.org/tumbleweed/iso/' | head -1 | grep -Poh '\d+' > /tmp/version_id.tmp
+    local url="https://lists.opensuse.org/archives/list/factory@lists.opensuse.org/latest"
+    curl -s "$url" | grep -E 'Tumbleweed snapshot.*release' | head -1 | grep -Poh '\d+' > /tmp/version_id.tmp
 }
 
 killall -s SIGKILL sleep;
