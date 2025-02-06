@@ -1,7 +1,7 @@
-# Gamer's Minimalist Conky 1.14
+# Gamer's Minimalist Conky 1.15
 
 **Author:** mendres (based on the script of archit3x - archit3x@archlinux.us)  
-**Release Date:** 28 August 2024  
+**Release Date:** 06 February 2025  
 **Tested on:** openSUSE Tumbleweed - GNOME Desktop  
 
 Feel free to modify this script! 😊
