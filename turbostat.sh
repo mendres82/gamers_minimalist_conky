@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# Check if another instance of this script is already running
-# If found, exit (prevents multiple instances)
-if pgrep -f "turbostat.sh" | grep -v "$$" > /dev/null; then
-    exit 0
+# Find and kill any other running instances of this script
+# This ensures only one instance runs at a time
+OLD_PIDS=$(pgrep -f "turbostat.sh" | grep -v "$$")
+if [ ! -z "$OLD_PIDS" ]; then
+    kill $OLD_PIDS 2>/dev/null
 fi
 
 # Kill any existing turbostat processes
