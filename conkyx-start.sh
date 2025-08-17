@@ -6,9 +6,9 @@ CONKY_CONFIG="$HOME/.config/conky/conky.conf"
 # Function to fetch the latest Tumbleweed snapshot version
 fetch_version() {
     # URL for the openSUSE Factory mailing list
-    local url="https://lists.opensuse.org/archives/list/factory@lists.opensuse.org/latest"
+    local url="https://factory-dashboard.opensuse.org/"
     # Fetch the page, find the latest snapshot release, extract version number and save to temp file
-    curl -s "$url" | grep -E 'Tumbleweed snapshot.*release' | head -1 | grep -Poh '\d+' > /tmp/version_id.tmp
+    curl -s "$url" | grep 'https://download.opensuse.org/tumbleweed/iso/' | head -1 | grep -Poh '\d+' > /tmp/version_id.tmp
 }
 
 # Kill any existing sleep processes and Conky instances
