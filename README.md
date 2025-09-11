@@ -45,6 +45,10 @@ Gamer's Minimalist Conky is a lightweight and customizable system monitor for yo
     ```sh
     ~/.config/conky/conky-start.sh
     ```
+7. To get SMART status without root privileges:
+    ```sh
+    sudo setcap cap_sys_admin,cap_sys_rawio+ep /usr/sbin/smartctl
+    ```
 
 ## Customization
 
