@@ -3,6 +3,9 @@
 # Path to the Conky configuration file
 CONKY_CONFIG="$HOME/.config/conky/conky.conf"
 
+# Set language to C locale for consistent behavior
+LANG=C
+
 # Function to fetch the latest Tumbleweed snapshot version
 fetch_version() {
     local version
@@ -33,12 +36,12 @@ done &
 sleep 20
 
 # Run turbostat script with elevated privileges and start Conky if successful
-if pkexec ~/.config/conky/turbostat.sh; then
+if pkexec ~/.config/conky/conkyx-daemon.sh; then
     # Wait for turbostat to initialize
     sleep 5
     # Start main Conky instance
-    LANG=C conky -c "$CONKY_CONFIG"
+    conky -c "$CONKY_CONFIG"
     # Start second Conky instance with offset position (for multi-monitor setup)
-    LANG=C conky -c "$CONKY_CONFIG" -x -3410 -y 50
+    conky -c "$CONKY_CONFIG" -x -3410 -y 50
 fi
 
