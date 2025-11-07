@@ -11,10 +11,10 @@ fetch_version() {
     local version
     
     # Try openSUSE Factory mailing list feed first (more reliable)
-    version=$(curl -s --max-time 10 "https://lists.opensuse.org/archives/list/factory@lists.opensuse.org/feed/" | grep -oP '(?<=<title>).*?(?=</title>)' | grep -E 'Tumbleweed snapshot.*release' | head -1 | grep -Poh '\d+')
+    version=$(curl -fs --max-time 10 "https://lists.opensuse.org/archives/list/factory@lists.opensuse.org/feed/" | grep -oP '(?<=<title>).*?(?=</title>)' | grep -E 'Tumbleweed snapshot.*release' | head -1 | grep -Poh '\d+')
     
     # Fallback to openQA dashboard if needed
-    [[ -z "$version" ]] && version=$(curl -s --max-time 10 "https://factory-dashboard.opensuse.org/" | grep 'https://download.opensuse.org/tumbleweed/iso/' | head -1 | grep -Poh '\d+')
+    [[ -z "$version" ]] && version=$(curl -fs --max-time 10 "https://factory-dashboard.opensuse.org/" | grep 'https://download.opensuse.org/tumbleweed/iso/' | head -1 | grep -Poh '\d+')
     
     # Write snapshot version to file
     [[ -n "$version" ]] && echo "$version" > /tmp/version_id.tmp
