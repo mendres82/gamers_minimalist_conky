@@ -13,6 +13,12 @@ fetch_version() {
     # Try openSUSE Factory mailing list feed first (more reliable)
     version=$(curl -fs --max-time 10 "https://lists.opensuse.org/archives/list/factory@lists.opensuse.org/feed/" | grep -oP '(?<=<title>).*?(?=</title>)' | grep -E 'Tumbleweed snapshot.*release' | head -1 | grep -Poh '\d+')
     
+    # Fallback to openQA dashboard if needed
+    if [[ -z "$version" ]]; then
+        version=$(curl -fs --max-time 10 "https://factory-dashboard.opensuse.org/" | grep 'https://download.opensuse.org/tumbleweed/iso/' | head -1 | grep -Poh '\d+')
+        curl -fs --max-time 10 "https://download.opensuse.org/tumbleweed/iso/Changes.$version.txt" > /dev/null 2>&1 || version=""
+    fi
+    
     # Write snapshot version to file
     echo "$version" > /tmp/version_id.tmp
 }
