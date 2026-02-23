@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set language to C locale for consistent behavior
-LANG=C
+export LC_ALL=C
 
 # Find and kill any other running instances of this script
 # This ensures only one instance runs at a time

@@ -4,7 +4,7 @@
 CONKY_CONFIG="$HOME/.config/conky/conky.conf"
 
 # Set language to C locale for consistent behavior
-LANG=C
+export LC_ALL=C
 
 # Function to fetch the latest Tumbleweed snapshot version
 fetch_version() {
