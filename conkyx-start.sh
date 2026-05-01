@@ -64,6 +64,8 @@ if pkexec ~/.config/conky/conkyx-daemon.sh; then
     # Start main Conky instance
     conky -d -c "$CONKY_CONFIG"
     # Start second Conky instance with offset position (for multi-monitor setup)
-    conky -d -c "$CONKY_CONFIG" -x -3410 -y 50
+    if [ "$(grep -l "^connected$" /sys/class/drm/card*-*/status | wc -l)" -ge 2 ]; then
+        conky -d -c "$CONKY_CONFIG" -x -3410 -y 50
+    fi
 fi
 
