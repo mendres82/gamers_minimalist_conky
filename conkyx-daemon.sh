@@ -3,15 +3,22 @@
 # Set language to C locale for consistent behavior
 export LC_ALL=C
 
-# Find and kill any other running instances of this script
-# This ensures only one instance runs at a time
-old_pids=$(pgrep -f "conkyx-daemon.sh" | grep -v "$$")
-if [ ! -z "$old_pids" ]; then
-    kill $old_pids 2>/dev/null
+script_name=$(basename "$0")
+
+script_pgid=$(ps -o pgid= -p $$ | tr -d ' ')
+old_pgids=$(ps -eo pgid,args | grep -E "$script_name" | grep -v "grep" | grep -v "$script_pgid" | awk '{print $1}' | sort -u)
+old_pids=""
+
+if [ -n "$old_pgids" ]; then
+    pgid_pattern=$(echo $old_pgids | sed 's/ /|/g')
+    old_pids=$(ps -eo pid,pgid,comm,args | awk -v pat="^($pgid_pattern)$" '$2 ~ pat' | grep -vE "gnome-session|gsd-|systemd" | awk '{print $1}' | sort -rnu)
 fi
 
-# Kill any existing turbostat processes
-pkill -f "turbostat --no-msr --Summary --quiet --show PkgWatt"
+if [ -n "$old_pids" ]; then
+    for pid in $old_pids; do
+        kill -TERM "$pid" 2>/dev/null
+    done
+fi
 
 # Start turbostat in background to monitor package power consumption
 turbostat --no-msr --Summary --quiet --show PkgWatt --interval 5 --out /tmp/turbostat.tmp &

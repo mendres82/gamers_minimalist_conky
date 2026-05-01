@@ -23,9 +23,22 @@ fetch_version() {
     echo "$version" > /tmp/version_id.tmp
 }
 
-# Kill any existing sleep processes and Conky instances
-killall -s SIGKILL sleep;
-killall -s SIGKILL conky;
+script_name=$(basename "$0")
+
+script_pgid=$(ps -o pgid= -p $$ | tr -d ' ')
+old_pgids=$(ps -eo pgid,args | grep -E "$script_name" | grep -v "grep" | grep -v "$script_pgid" | awk '{print $1}' | sort -u)
+old_pids=""
+
+if [ -n "$old_pgids" ]; then
+    pgid_pattern=$(echo $old_pgids | sed 's/ /|/g')
+    old_pids=$(ps -eo pid,pgid,comm,args | awk -v pat="^($pgid_pattern)$" '$2 ~ pat' | grep -vE "gnome-session|gsd-|systemd" | awk '{print $1}' | sort -rnu)
+fi
+
+if [ -n "$old_pids" ]; then
+    for pid in $old_pids; do
+        kill -TERM "$pid" 2>/dev/null
+    done
+fi
 
 # Fetch version initially
 fetch_version
