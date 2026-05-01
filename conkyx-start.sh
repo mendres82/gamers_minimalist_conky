@@ -62,8 +62,8 @@ if pkexec ~/.config/conky/conkyx-daemon.sh; then
     # Wait for turbostat to initialize
     sleep 5
     # Start main Conky instance
-    conky -c "$CONKY_CONFIG"
+    conky -d -c "$CONKY_CONFIG"
     # Start second Conky instance with offset position (for multi-monitor setup)
-    conky -c "$CONKY_CONFIG" -x -3410 -y 50
+    conky -d -c "$CONKY_CONFIG" -x -3410 -y 50
 fi
 
