@@ -40,6 +40,8 @@ if [ -n "$old_pids" ]; then
     done
 fi
 
+killall conky
+
 # Fetch version initially
 fetch_version
 
