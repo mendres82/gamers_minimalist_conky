@@ -40,7 +40,7 @@ if [ -n "$old_pids" ]; then
     done
 fi
 
-killall conky
+killall conky 2>/dev/null
 
 # Fetch version initially
 fetch_version
