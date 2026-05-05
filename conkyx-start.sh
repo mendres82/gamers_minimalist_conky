@@ -50,12 +50,6 @@ while sleep 3600; do
     fetch_version
 done &
 
-# Start background process to update sensors stats every second
-while sleep 1; do
-    LC_ALL=C.UTF-8 sensors > /tmp/sensors.1.tmp &&
-    mv -f /tmp/sensors.1.tmp /tmp/sensors.tmp
-done &
-
 # Start background process to update radeontop stats every 5 seconds
 while sleep 5; do
     radeontop -d- -l1 | tail -1 > /tmp/radeontop.1.tmp &&
