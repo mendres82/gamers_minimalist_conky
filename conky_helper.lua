@@ -1,3 +1,11 @@
+--[[
+# Gamer's Minimalist Conky 1.5
+# Author : mendres
+# Release date : 5 May 2026
+# Tested on : openSUSE Tumbleweed - GNOME Desktop
+# Feel free to modify this script!
+]]
+
 local sensors_bin = '/usr/bin/sensors'
 local radeontop_path = '/tmp/radeontop.tmp'
 local version_id_path = '/tmp/version_id.tmp'
