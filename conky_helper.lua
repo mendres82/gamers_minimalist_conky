@@ -1,5 +1,5 @@
 --[[
-# Gamer's Minimalist Conky 1.51
+# Gamer's Minimalist Conky 1.52
 # Author : mendres
 # Release date : 5 May 2026
 # Tested on : openSUSE Tumbleweed - GNOME Desktop
@@ -270,8 +270,7 @@ local network = {
     ula6 = '',
     secondary_ipv4 = '',
     secondary_ipv4_count = '0',
-    public_ipv6 = '',
-    public_ipv6_count = '0',
+    global_ipv6 = '',
     gateway1 = '',
     gateway2 = '',
     default_route_count = '0',
@@ -279,17 +278,25 @@ local network = {
     dns2 = '',
     dns3 = '',
     dns4 = '',
-    has_dns3 = '0',
-    has_dns4 = '0',
+    dns_count = '0',
     dns_domain = '',
 }
 
+local function ipv6_is_ula(ip)
+    ip = trim((ip or '')):lower()
+    local hextet = ip:match('^([0-9a-f]+):')
+    if not hextet then
+        return false
+    end
+    local n = tonumber(hextet, 16)
+    return n ~= nil and n >= 0xfc00 and n <= 0xfdff -- fc00::/7
+end
+
 local function network_refresh()
-    network.ula6 = ''
     network.secondary_ipv4 = ''
     network.secondary_ipv4_count = '0'
-    network.public_ipv6 = ''
-    network.public_ipv6_count = '0'
+    network.ula6 = ''
+    network.global_ipv6 = ''
     network.gateway1 = ''
     network.gateway2 = ''
     network.default_route_count = '0'
@@ -297,8 +304,7 @@ local function network_refresh()
     network.dns2 = ''
     network.dns3 = ''
     network.dns4 = ''
-    network.has_dns3 = '0'
-    network.has_dns4 = '0'
+    network.dns_count = '0'
     network.dns_domain = ''
 
     local ipv4s = popen('LC_ALL=C ip -4 addr 2>/dev/null')
@@ -324,26 +330,23 @@ local function network_refresh()
         network.secondary_ipv4 = secondary_ipv4s[1]
     end
 
-    local public_ipv6s = {}
     for line in ipv6s:gmatch('[^\r\n]+') do
         local has_mngtmpaddr = line:find('mngtmpaddr', 1, true) ~= nil
-        if has_mngtmpaddr then
-            if line:find('fd00', 1, true) then
-                local ula_ipv6 = line:match('inet6%s+([^%s]+)/')
-                if ula_ipv6 and network.ula6 == '' then
-                    network.ula6 = ula_ipv6
-                end
-            elseif line:find('2a01', 1, true) then
-                local public_ipv6 = line:match('inet6%s+([^%s]+)/')
-                if public_ipv6 then
-                    public_ipv6s[#public_ipv6s + 1] = public_ipv6
+        if has_mngtmpaddr and line:find('scope%s+global') ~= nil then
+            local ipv6 = line:match('inet6%s+([^%s]+)/')
+            if ipv6 then
+                if ipv6_is_ula(ipv6) then
+                    if network.ula6 == '' then
+                        network.ula6 = ipv6
+                    end
+                else
+                    if network.global_ipv6 == ''
+                        and line:find('deprecated', 1, true) == nil then
+                        network.global_ipv6 = ipv6
+                    end
                 end
             end
         end
-    end
-    network.public_ipv6_count = tostring(#public_ipv6s)
-    if #public_ipv6s == 1 then
-        network.public_ipv6 = public_ipv6s[1]
     end
 
     local gateways = {}
@@ -378,8 +381,7 @@ local function network_refresh()
     network.dns2 = nameserver[2] or ''
     network.dns3 = nameserver[3] or ''
     network.dns4 = nameserver[4] or ''
-    network.has_dns3 = (network.dns3 ~= '' and '1' or '0')
-    network.has_dns4 = (network.dns4 ~= '' and '1' or '0')
+    network.dns_count = tostring(#nameserver)
 end
 
 function conky_helper_refresh()
@@ -418,8 +420,7 @@ conky_radeon_vram_bar = reader(radeontop, 'vram_bar')
 conky_network_secondary_ipv4 = reader(network, 'secondary_ipv4')
 conky_network_secondary_ipv4_count = reader(network, 'secondary_ipv4_count')
 conky_network_ula6 = reader(network, 'ula6')
-conky_network_public_ipv6 = reader(network, 'public_ipv6')
-conky_network_public_ipv6_count = reader(network, 'public_ipv6_count')
+conky_network_global_ipv6 = reader(network, 'global_ipv6')
 conky_network_gateway1 = reader(network, 'gateway1')
 conky_network_gateway2 = reader(network, 'gateway2')
 conky_network_default_route_count = reader(network, 'default_route_count')
@@ -427,6 +428,5 @@ conky_network_dns1 = reader(network, 'dns1')
 conky_network_dns2 = reader(network, 'dns2')
 conky_network_dns3 = reader(network, 'dns3')
 conky_network_dns4 = reader(network, 'dns4')
-conky_network_has_dns3 = reader(network, 'has_dns3')
-conky_network_has_dns4 = reader(network, 'has_dns4')
+conky_network_dns_count = reader(network, 'dns_count')
 conky_network_dns_domain = reader(network, 'dns_domain')
