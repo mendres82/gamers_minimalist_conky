@@ -108,7 +108,7 @@ local function version_refresh()
 end
 
 local sensors = {
-    tsi0 = '',
+    tctl = '',
     junction = '',
     fan2 = '',
     fan1 = '',
@@ -127,7 +127,7 @@ local function sensors_refresh()
     end
     last_sensors_refresh_second = current_second
 
-    sensors.tsi0 = ''
+    sensors.tctl = ''
     sensors.junction = ''
     sensors.fan2 = ''
     sensors.fan1 = ''
@@ -151,8 +151,8 @@ local function sensors_refresh()
         end
         local label = fields[1] or ''
 
-        if label:find('TSI0_TEMP', 1, true) then
-            sensors.tsi0 = fields[2] or ''
+        if label:match('^Tctl:?$') then
+            sensors.tctl = fields[2] or ''
             sensors.cpu_temperature = fields[2] and tonumber(fields[2]:match('[+-]?%d+%.?%d*')) or nil
         elseif label:match('^junction:?') then
             sensors.junction = fields[2] or ''
@@ -400,7 +400,7 @@ conky_os_pretty_name = reader(version, 'os_pretty_name')
 conky_snapshot_version = reader(version, 'snapshot_version')
 conky_is_latest_snapshot_version = reader(version, 'is_latest_snapshot_version')
 
-conky_sensors_tsi0 = reader(sensors, 'tsi0')
+conky_sensors_tctl = reader(sensors, 'tctl')
 conky_sensors_junction = reader(sensors, 'junction')
 conky_sensors_fan1 = reader(sensors, 'fan1')
 conky_sensors_fan2 = reader(sensors, 'fan2')
