@@ -1,4 +1,4 @@
-# Gamer's Minimalist Conky 1.52
+# Gamer's Minimalist Conky 1.55
 
 **Author:** mendres (based on the script of archit3x - archit3x@archlinux.us)  
 **Release Date:** 5 May 2026  
