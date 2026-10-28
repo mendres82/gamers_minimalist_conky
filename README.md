@@ -1,7 +1,7 @@
-# Gamer's Minimalist Conky 1.55
+# Gamer's Minimalist Conky 1.60
 
 **Author:** mendres (based on the script of archit3x - archit3x@archlinux.us)  
-**Release Date:** 5 May 2026  
+**Release Date:** 28 October 2026  
 **Tested on:** openSUSE Tumbleweed - GNOME Desktop  
 
 Feel free to modify this script!
@@ -18,6 +18,22 @@ Gamer's Minimalist Conky is a lightweight and customizable system monitor for yo
 - Customizable appearance
 - Lightweight and efficient
 - Displays essential system information
+- AMD GPU stats via `amdgpu_top` (clocks, VRAM, top GPU processes)
+- Disk I/O top processes via Conky `${top_io}`
+
+## Dependencies
+
+Required on openSUSE Tumbleweed (package names may differ elsewhere):
+
+- `conky`
+- `amdgpu_top`
+- `jq`
+- `sensors` (lm_sensors)
+- `vulkaninfo` (vulkan-tools)
+- `glxinfo` (Mesa-demo-x)
+- `turbostat` and `smartctl` (started via `pkexec` by the daemon script)
+
+Optional: `gamemoded` for the Gamemode status line.
 
 ## Installation
 
@@ -37,22 +53,21 @@ Gamer's Minimalist Conky is a lightweight and customizable system monitor for yo
     ```sh
     cp * ~/.config/conky
     ```
-5. Make both `.sh` files executable:
+5. Make the shell scripts executable:
     ```sh
     chmod +x ~/.config/conky/*.sh
     ```
-6. Start Conky by executing `conky-start.sh`:
+6. Start Conky:
     ```sh
-    ~/.config/conky/conky-start.sh
+    ~/.config/conky/conkyx-start.sh
     ```
-7. To get SMART status without root privileges:
-    ```sh
-    sudo setcap cap_sys_admin,cap_sys_rawio+ep /usr/sbin/smartctl
-    ```
+    The start script prompts for privileges (`pkexec`) so `conkyx-daemon.sh` can run `turbostat` and `smartctl`.
 
 ## Customization
 
 You can customize the appearance and behavior of Conky by editing the configuration files in the `~/.config/conky` directory. Refer to the [Conky documentation](https://github.com/brndnmtthws/conky/wiki) for more details on configuration options.
+
+Hardware-specific paths (for example `/sys/class/drm/card1`, `/dev/nvme0n1`, and dual-monitor `-x` offset) may need adjusting for your system.
 
 ## Contributing
 
@@ -65,4 +80,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ---
 
 Enjoy your Gamer's Minimalist Conky setup!
-

@@ -1,7 +1,7 @@
 --[[
-# Gamer's Minimalist Conky 1.55
+# Gamer's Minimalist Conky 1.60
 # Author : mendres
-# Release date : 5 May 2026
+# Release date : 28 October 2026
 # Tested on : openSUSE Tumbleweed - GNOME Desktop
 # Feel free to modify this script!
 ]]
