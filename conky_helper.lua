@@ -7,7 +7,8 @@
 ]]
 
 local SENSORS_BIN = '/usr/bin/sensors'
-local RADEONTOP_PATH = '/tmp/radeontop.tmp'
+local AMDGPU_TOP_PATH = '/tmp/amdgpu_top.tmp'
+local AMDGPU_GPU_TOP_PATH = '/tmp/amdgpu_gpu_top.tmp'
 local VERSION_ID_PATH = '/tmp/version_id.tmp'
 local RESOLV_PATH = '/etc/resolv.conf'
 local REFRESH_IN_SECONDS = 60
@@ -194,7 +195,7 @@ function conky_sensors_graph_gpu()
     return sensors.gpu_temperature or 0
 end
 
-local radeontop = {
+local amdgpu = {
     core_ghz = '0.00',
     gpu_percent = '0',
     vram_ghz = '0.00',
@@ -204,76 +205,79 @@ local radeontop = {
     vram_bar = 0,
 }
 
-local function radeontop_refresh()
-    radeontop.core_ghz = '0.00'
-    radeontop.gpu_percent = '0'
-    radeontop.vram_ghz = '0.00'
-    radeontop.vram_usage_gib = '0.00'
-    radeontop.vram_percent = '0'
-    radeontop.gpu_bar = 0
-    radeontop.vram_bar = 0
+local function amdgpu_refresh()
+    amdgpu.core_ghz = '0.00'
+    amdgpu.gpu_percent = '0'
+    amdgpu.vram_ghz = '0.00'
+    amdgpu.vram_usage_gib = '0.00'
+    amdgpu.vram_percent = '0'
+    amdgpu.gpu_bar = 0
+    amdgpu.vram_bar = 0
 
-    local temp_file = io.open(RADEONTOP_PATH, 'r')
-    if not temp_file then
-        return
-    end
-    local radeontop_output = temp_file:read('*a') or ''
-    temp_file:close()
-    local line = radeontop_output:match('[^\r\n]+')
-    if not line or not line:find('gpu', 1, true) then
+    local line = fopen(AMDGPU_TOP_PATH)
+    if not line then
         return
     end
 
-    local fields = {}
-    for field in (line .. ','):gmatch('(.-),') do
-        fields[#fields + 1] = field
-    end
-    local field_gpu_usage = fields[2]
-    if field_gpu_usage then
-        local gpu_usage_percent_value = field_gpu_usage:match('([0-9.]+)%%%s*$')
-        local gpu_usage_percent = tonumber(gpu_usage_percent_value)
-        if gpu_usage_percent then
-            radeontop.gpu_percent = string.format('%.0f', gpu_usage_percent)
-            radeontop.gpu_bar = math.min(100, math.max(0, math.floor(gpu_usage_percent + 0.5)))
-        end
+    local gpu, vram_used, vram_total, sclk, mclk =
+        line:match('^([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)%s+([%d%.]+)')
+    gpu, vram_used, vram_total, sclk, mclk =
+        tonumber(gpu), tonumber(vram_used), tonumber(vram_total), tonumber(sclk), tonumber(mclk)
+    -- gpu == 0 is valid (idle); only abort when the line did not parse
+    if gpu == nil or vram_used == nil or vram_total == nil or sclk == nil or mclk == nil then
+        return
     end
 
-    local field_vram_usage = fields[13]
-    if field_vram_usage then
-        local vram_usage_mib_value = field_vram_usage:match('([0-9.]+)mb')
-        local vram_usage_percent_value = field_vram_usage:match('%s([0-9.]+)%%%s+')
-        if vram_usage_mib_value then
-            local vram_usage_gib = tonumber(vram_usage_mib_value) / 1024
-            if vram_usage_gib then
-                radeontop.vram_usage_gib = string.format('%.2f', vram_usage_gib)
-            end
-        end
-        if vram_usage_percent_value then
-            local vram_usage_percent = tonumber(vram_usage_percent_value)
-            if vram_usage_percent then
-                radeontop.vram_percent = string.format('%.0f', vram_usage_percent)
-                radeontop.vram_bar = math.min(100, math.max(0, math.floor(vram_usage_percent + 0.5)))
-            end
-        end
+    amdgpu.gpu_percent = string.format('%.2f', gpu)
+    amdgpu.gpu_bar = math.min(100, math.max(0, math.floor(gpu + 0.5)))
+    amdgpu.vram_usage_gib = string.format('%.2f', vram_used / 1024)
+    if vram_total > 0 then
+        local vram_percent = (vram_used / vram_total) * 100
+        amdgpu.vram_percent = string.format('%.0f', vram_percent)
+        amdgpu.vram_bar = math.min(100, math.max(0, math.floor(vram_percent + 0.5)))
     end
+    amdgpu.core_ghz = string.format('%.2f', sclk / 1000)
+    amdgpu.vram_ghz = string.format('%.2f', mclk / 1000)
+end
 
-    local field_vram_clock = fields[15]
-    if field_vram_clock then
-        local vram_ghz_value = field_vram_clock:match('([0-9.]+)ghz%s*$')
-        local vram_ghz = tonumber(vram_ghz_value)
-        if vram_ghz then
-            radeontop.vram_ghz = string.format('%.2f', vram_ghz)
-        end
-    end
+local gpu_top = {
+    names = {},
+    percents = {},
+}
 
-    local field_core_clock = fields[16]
-    if field_core_clock then
-        local core_ghz_value = field_core_clock:match('([0-9.]+)ghz%s*$')
-        local core_ghz = tonumber(core_ghz_value)
-        if core_ghz then
-            radeontop.core_ghz = string.format('%.2f', core_ghz)
+local TOP_NAME_WIDTH = 15
+
+local function pad_top_name(name)
+    if not name or name == '' then
+        return ''
+    end
+    if #name > TOP_NAME_WIDTH then
+        return name:sub(1, TOP_NAME_WIDTH)
+    end
+    return name .. string.rep(' ', TOP_NAME_WIDTH - #name)
+end
+
+local function gpu_top_refresh()
+    gpu_top.names = {}
+    gpu_top.percents = {}
+    local content = fopen(AMDGPU_GPU_TOP_PATH) or ''
+    for line in content:gmatch('[^\r\n]+') do
+        local name, value = line:match('^([^\t]+)\t(.*)$')
+        local percent = tonumber(value)
+        if name and percent ~= nil then
+            gpu_top.names[#gpu_top.names + 1] = pad_top_name(name)
+            -- Match ${top cpu}: fixed-width, 2 decimals
+            gpu_top.percents[#gpu_top.percents + 1] = string.format('%6.2f%%', percent)
         end
     end
+end
+
+function conky_gpu_top_name(index)
+    return indexed(gpu_top.names, index)
+end
+
+function conky_gpu_top_percent(index)
+    return indexed(gpu_top.percents, index)
 end
 
 local network = {
@@ -386,7 +390,8 @@ end
 
 function conky_helper_refresh()
     sensors_refresh()
-    radeontop_refresh()
+    amdgpu_refresh()
+    gpu_top_refresh()
     local current_time = os.time()
     if last_periodic_refresh > 0 and (current_time - last_periodic_refresh) < REFRESH_IN_SECONDS then
         return
@@ -409,13 +414,13 @@ conky_sensors_in0 = reader(sensors, 'in0')
 conky_sensors_vddgfx = reader(sensors, 'vddgfx')
 conky_sensors_composite = reader(sensors, 'composite')
 
-conky_radeon_core_ghz = reader(radeontop, 'core_ghz')
-conky_radeon_gpu_percent = reader(radeontop, 'gpu_percent')
-conky_radeon_gpu_bar = reader(radeontop, 'gpu_bar')
-conky_radeon_vram_ghz = reader(radeontop, 'vram_ghz')
-conky_radeon_vram_usage_gib = reader(radeontop, 'vram_usage_gib')
-conky_radeon_vram_percent = reader(radeontop, 'vram_percent')
-conky_radeon_vram_bar = reader(radeontop, 'vram_bar')
+conky_radeon_core_ghz = reader(amdgpu, 'core_ghz')
+conky_radeon_gpu_percent = reader(amdgpu, 'gpu_percent')
+conky_radeon_gpu_bar = reader(amdgpu, 'gpu_bar')
+conky_radeon_vram_ghz = reader(amdgpu, 'vram_ghz')
+conky_radeon_vram_usage_gib = reader(amdgpu, 'vram_usage_gib')
+conky_radeon_vram_percent = reader(amdgpu, 'vram_percent')
+conky_radeon_vram_bar = reader(amdgpu, 'vram_bar')
 
 conky_network_ula6 = reader(network, 'ula6')
 conky_network_ipv4_count = reader(network, 'ipv4_count')

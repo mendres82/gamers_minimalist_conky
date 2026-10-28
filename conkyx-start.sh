@@ -50,10 +50,43 @@ while sleep 3600; do
     fetch_version
 done &
 
-# Start background process to update radeontop stats every 5 seconds
-while sleep 5; do
-    radeontop -d- -l1 | tail -1 > /tmp/radeontop.1.tmp &&
-    mv -f /tmp/radeontop.1.tmp /tmp/radeontop.tmp
+# Update amdgpu_top stats/processes about once per second (-s 1000 paces the loop).
+# One jq pass: first line = stats, following lines = top GPU processes.
+while true; do
+    if ! amdgpu_top --json -n 1 -s 1000 --no-pc 2>/dev/null | jq -r '
+      .devices[0] as $d
+      | (
+          [
+            ($d.gpu_activity.GFX.value // 0),
+            ($d.VRAM["Total VRAM Usage"].value // 0),
+            ($d.VRAM["Total VRAM"].value // 0),
+            ($d.Sensors.GFX_SCLK.value // 0),
+            ($d.Sensors.GFX_MCLK.value // 0)
+          ] | @tsv
+        ),
+        (
+          [
+            $d.fdinfo // {} | to_entries[] |
+            {
+              name: ((.value.name // "?")[:15]),
+              gfx: (.value.usage.usage.GFX.value // 0)
+            }
+          ]
+          | sort_by(-.gfx)
+          | .[:3][]
+          | [.name, .gfx]
+          | @tsv
+        )
+    ' | {
+        IFS= read -r stats || exit 1
+        printf '%s\n' "$stats" > /tmp/amdgpu_top.1.tmp
+        cat > /tmp/amdgpu_gpu_top.1.tmp
+    }; then
+        sleep 1
+        continue
+    fi
+    mv -f /tmp/amdgpu_top.1.tmp /tmp/amdgpu_top.tmp
+    mv -f /tmp/amdgpu_gpu_top.1.tmp /tmp/amdgpu_gpu_top.tmp
 done &
 
 # Wait for system to settle
@@ -67,7 +100,7 @@ if pkexec ~/.config/conky/conkyx-daemon.sh; then
     conky -d -c "$CONKY_CONFIG"
     # Start second Conky instance with offset position (for multi-monitor setup)
     if [ "$(grep -l "^connected$" /sys/class/drm/card*-*/status | wc -l)" -ge 2 ]; then
-        conky -d -c "$CONKY_CONFIG" -x -3410 -y 50
+        conky -d -c "$CONKY_CONFIG" -x -3410 -y 40
     fi
 fi
 
