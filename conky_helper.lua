@@ -1,5 +1,5 @@
 --[[
-# Gamer's Minimalist Conky 1.60
+# Gamer's Minimalist Conky 1.65
 # Author : mendres
 # Release date : 28 October 2026
 # Tested on : openSUSE Tumbleweed - GNOME Desktop
@@ -9,6 +9,7 @@
 local SENSORS_BIN = '/usr/bin/sensors'
 local AMDGPU_TOP_PATH = '/tmp/amdgpu_top.tmp'
 local AMDGPU_GPU_TOP_PATH = '/tmp/amdgpu_gpu_top.tmp'
+local AMDGPU_VRAM_TOP_PATH = '/tmp/amdgpu_vram_top.tmp'
 local VERSION_ID_PATH = '/tmp/version_id.tmp'
 local RESOLV_PATH = '/etc/resolv.conf'
 local REFRESH_IN_SECONDS = 60
@@ -245,6 +246,11 @@ local gpu_top = {
     percents = {},
 }
 
+local vram_top = {
+    names = {},
+    usages = {},
+}
+
 local TOP_NAME_WIDTH = 15
 
 local function pad_top_name(name)
@@ -255,6 +261,14 @@ local function pad_top_name(name)
         return name:sub(1, TOP_NAME_WIDTH)
     end
     return name .. string.rep(' ', TOP_NAME_WIDTH - #name)
+end
+
+local function format_vram_mib(mib)
+    mib = tonumber(mib) or 0
+    if mib >= 1024 then
+        return string.format('%.2fGiB', mib / 1024)
+    end
+    return string.format('%dMiB', math.floor(mib + 0.5))
 end
 
 local function gpu_top_refresh()
@@ -272,12 +286,34 @@ local function gpu_top_refresh()
     end
 end
 
+local function vram_top_refresh()
+    vram_top.names = {}
+    vram_top.usages = {}
+    local content = fopen(AMDGPU_VRAM_TOP_PATH) or ''
+    for line in content:gmatch('[^\r\n]+') do
+        local name, value = line:match('^([^\t]+)\t(.*)$')
+        local mib = tonumber(value)
+        if name and mib ~= nil then
+            vram_top.names[#vram_top.names + 1] = pad_top_name(name)
+            vram_top.usages[#vram_top.usages + 1] = format_vram_mib(mib)
+        end
+    end
+end
+
 function conky_gpu_top_name(index)
     return indexed(gpu_top.names, index)
 end
 
 function conky_gpu_top_percent(index)
     return indexed(gpu_top.percents, index)
+end
+
+function conky_vram_top_name(index)
+    return indexed(vram_top.names, index)
+end
+
+function conky_vram_top_usage(index)
+    return indexed(vram_top.usages, index)
 end
 
 local network = {
@@ -392,6 +428,7 @@ function conky_helper_refresh()
     sensors_refresh()
     amdgpu_refresh()
     gpu_top_refresh()
+    vram_top_refresh()
     local current_time = os.time()
     if last_periodic_refresh > 0 and (current_time - last_periodic_refresh) < REFRESH_IN_SECONDS then
         return

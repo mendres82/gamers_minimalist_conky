@@ -51,7 +51,7 @@ while sleep 3600; do
 done &
 
 # Update amdgpu_top stats/processes about once per second (-s 1000 paces the loop).
-# One jq pass: first line = stats, following lines = top GPU processes.
+# One jq pass: first line = stats, then top GPU (G) and VRAM (V) process lines.
 while true; do
     if ! amdgpu_top --json -n 1 -s 1000 --no-pc 2>/dev/null | jq -r '
       .devices[0] as $d
@@ -69,24 +69,36 @@ while true; do
             $d.fdinfo // {} | to_entries[] |
             {
               name: ((.value.name // "?")[:15]),
-              gfx: (.value.usage.usage.GFX.value // 0)
+              gfx: (.value.usage.usage.GFX.value // 0),
+              vram: (.value.usage.usage.VRAM.value // 0)
             }
-          ]
-          | sort_by(-.gfx)
-          | .[:3][]
-          | [.name, .gfx]
-          | @tsv
+          ] as $procs
+          | (
+              $procs | sort_by(-.gfx) | .[:3][] | ["G", .name, .gfx] | @tsv
+            ),
+            (
+              $procs | sort_by(-.vram) | .[:3][] | ["V", .name, .vram] | @tsv
+            )
         )
     ' | {
         IFS= read -r stats || exit 1
         printf '%s\n' "$stats" > /tmp/amdgpu_top.1.tmp
-        cat > /tmp/amdgpu_gpu_top.1.tmp
+        : > /tmp/amdgpu_gpu_top.1.tmp
+        : > /tmp/amdgpu_vram_top.1.tmp
+        while IFS=$'\t' read -r kind name value; do
+            [ -n "$kind" ] || continue
+            case "$kind" in
+                G) printf '%s\t%s\n' "$name" "$value" >> /tmp/amdgpu_gpu_top.1.tmp ;;
+                V) printf '%s\t%s\n' "$name" "$value" >> /tmp/amdgpu_vram_top.1.tmp ;;
+            esac
+        done
     }; then
         sleep 1
         continue
     fi
     mv -f /tmp/amdgpu_top.1.tmp /tmp/amdgpu_top.tmp
     mv -f /tmp/amdgpu_gpu_top.1.tmp /tmp/amdgpu_gpu_top.tmp
+    mv -f /tmp/amdgpu_vram_top.1.tmp /tmp/amdgpu_vram_top.tmp
 done &
 
 # Wait for system to settle
