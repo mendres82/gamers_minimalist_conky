@@ -97,8 +97,16 @@ while true; do
         continue
     fi
     mv -f /tmp/amdgpu_top.1.tmp /tmp/amdgpu_top.tmp
-    mv -f /tmp/amdgpu_gpu_top.1.tmp /tmp/amdgpu_gpu_top.tmp
     mv -f /tmp/amdgpu_vram_top.1.tmp /tmp/amdgpu_vram_top.tmp
+
+    # fdinfo can briefly read 0% while the chip is busy — keep the last ranking
+    chip=$(awk '{print int($1); exit}' /tmp/amdgpu_top.tmp)
+    lead=$(awk -F'\t' 'NR==1 {print int($2); exit}' /tmp/amdgpu_gpu_top.1.tmp)
+    if [ -s /tmp/amdgpu_gpu_top.1.tmp ] && [ "$chip" -lt 40 -o "${lead:-0}" -ge 5 ]; then
+        mv -f /tmp/amdgpu_gpu_top.1.tmp /tmp/amdgpu_gpu_top.tmp
+    else
+        rm -f /tmp/amdgpu_gpu_top.1.tmp
+    fi
 done &
 
 # Wait for system to settle
