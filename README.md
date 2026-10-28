@@ -18,7 +18,7 @@ Gamer's Minimalist Conky is a lightweight and customizable system monitor for yo
 - Customizable appearance
 - Lightweight and efficient
 - Displays essential system information
-- AMD GPU stats via `amdgpu_top` (clocks, VRAM, top GPU processes)
+- AMD GPU stats via `amdgpu_top` (clocks, VRAM, top GPU / VRAM processes)
 - Disk I/O top processes via Conky `${top_io}`
 
 ## Dependencies
