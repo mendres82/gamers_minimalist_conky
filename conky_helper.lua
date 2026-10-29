@@ -229,7 +229,7 @@ local function amdgpu_refresh()
         return
     end
 
-    amdgpu.gpu_percent = string.format('%.2f', gpu)
+    amdgpu.gpu_percent = string.format('%.0f', gpu)
     amdgpu.gpu_bar = math.min(100, math.max(0, math.floor(gpu + 0.5)))
     amdgpu.vram_usage_gib = string.format('%.2f', vram_used / 1024)
     if vram_total > 0 then
@@ -326,7 +326,6 @@ local network = {
     default_route_count = '0',
     dns = {},
     dns_count = '0',
-    dns_domain = '',
 }
 
 local function ipv6_is_ula(ip)
@@ -349,7 +348,6 @@ local function network_refresh()
     network.default_route_count = '0'
     network.dns = {}
     network.dns_count = '0'
-    network.dns_domain = ''
 
     local ipv4s = popen('LC_ALL=C ip -o -4 addr 2>/dev/null')
     local ipv6s = popen('LC_ALL=C ip -o -6 addr 2>/dev/null')
@@ -403,12 +401,6 @@ local function network_refresh()
             local nameserver_entry = trimmed_line:match('^nameserver%s+(%S+)')
             if nameserver_entry then
                 nameserver[#nameserver + 1] = nameserver_entry
-            end
-            if network.dns_domain == '' then
-                local dns_domain_entry = trimmed_line:match('^search%s+(%S+)')
-                if dns_domain_entry then
-                    network.dns_domain = dns_domain_entry
-                end
             end
         end
     end
@@ -466,4 +458,3 @@ conky_network_gateway1 = reader(network, 'gateway1')
 conky_network_gateway2 = reader(network, 'gateway2')
 conky_network_default_route_count = reader(network, 'default_route_count')
 conky_network_dns_count = reader(network, 'dns_count')
-conky_network_dns_domain = reader(network, 'dns_domain')
